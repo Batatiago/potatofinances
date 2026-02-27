@@ -1,0 +1,167 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Potato | Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="shortcut icon" href="potato.png" type="image/x-icon">
+</head>
+
+<body>
+    <!-- Cabeçalho principal com título e ação rápida para abrir o modal -->
+    <header class="topbar">
+        <div class="brand">
+            <img src="potato.png" alt="Logo do projeto">
+            <div>
+                <h1>Potato Finances</h1>
+                <p>Controle financeiro pessoal</p>
+            </div>
+        </div>
+        <div class="topbar-actions">
+            <button class="btn-ghost" id="btnTema" type="button" aria-label="Alternar tema">🌙 Modo noturno</button>
+            <button class="btn-primary" id="btnAbrirModal" type="button">+ Nova transação</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Seletor de ano e meses para filtrar o histórico e os gráficos -->
+        <section class="month-area">
+            <div class="year-control" aria-label="Controle de ano">
+                <button id="prevYear" type="button" aria-label="Ano anterior">&lt;</button>
+                <strong id="selectedYear">2026</strong>
+                <button id="nextYear" type="button" aria-label="Próximo ano">&gt;</button>
+            </div>
+            <div class="month-filter" id="monthButtons" aria-label="Meses do ano"></div>
+        </section>
+
+        <!-- Cartões-resumo do período selecionado -->
+        <section class="cards">
+            <article class="card">
+                <div class="card-header">
+                    <h2>Saldo atual</h2>
+                    <span class="icon">$</span>
+                </div>
+                <p class="amount positive" id="saldo">R$ 0,00</p>
+                <small id="saldoStatus">Saldo neutro</small>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <h2>Receitas</h2>
+                    <span class="icon">+</span>
+                </div>
+                <p class="amount positive" id="totalReceitas">R$ 0,00</p>
+                <small><span id="qtdReceitas">0</span> transações</small>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <h2>Despesas</h2>
+                    <span class="icon danger">-</span>
+                </div>
+                <p class="amount negative" id="totalDespesas">R$ 0,00</p>
+                <small><span id="qtdDespesas">0</span> transações</small>
+            </article>
+
+            <article class="card">
+                <div class="card-header">
+                    <h2>Investimentos</h2>
+                    <span class="icon">📊</span>
+                </div>
+                <p class="amount" id="totalInvestimentos">R$ 0,00</p>
+                <small>total na categoria Investimentos</small>
+            </article>
+        </section>
+
+        <!-- Abas visuais (mantidas como referência de navegação) -->
+        <nav class="tabs" aria-label="Abas">
+            <button class="tab active" type="button">Visão geral</button>
+            <!-- <button class="tab" type="button">Transações</button>
+            <button class="tab" type="button">Metas</button> -->
+        </nav>
+
+        <!-- Área de gráficos -->
+        <section class="overview-grid">
+            <article class="panel chart-panel">
+                <h3 id="barTitle">Receitas x Despesas</h3>
+                <canvas id="barChart" aria-label="Gráfico de receitas e despesas"></canvas>
+            </article>
+
+            <article class="panel donut-panel">
+                <h3>Gastos por categoria</h3>
+                <canvas id="donutChart" aria-label="Gráfico de gastos por categoria"></canvas>
+                <div class="legend" id="donutLegend"></div>
+            </article>
+        </section>
+
+        <!-- Histórico de transações do mês/ano selecionado -->
+        <section class="panel history-panel">
+            <div class="history-header">
+                <h3 id="historyTitle">Histórico</h3>
+                <div class="pill-group">
+                    <button class="pill active" id="filtroTodas" type="button">Todas</button>
+                    <button class="pill" id="filtroReceitas" type="button">Receitas</button>
+                    <button class="pill" id="filtroDespesas" type="button">Despesas</button>
+                </div>
+            </div>
+            <ul id="listaTransacoes"></ul>
+        </section>
+    </main>
+
+    <!-- Modal flutuante para cadastrar nova transação -->
+    <div class="modal-overlay" id="modalOverlay" aria-hidden="true">
+        <section class="modal" id="modalTransacao" role="dialog" aria-modal="true" aria-labelledby="tituloModal">
+            <!-- Cabeçalho do modal -->
+            <header class="modal-header">
+                <h3 id="tituloModal">Nova transação</h3>
+                <button class="close-modal" id="btnFecharModal" type="button" aria-label="Fechar">×</button>
+            </header>
+
+            <!-- Formulário principal -->
+            <form id="formTransacao">
+                <!-- Seletor visual do tipo de transação -->
+                <div class="tipo-toggle" aria-label="Tipo de transação">
+                    <button class="tipo-btn active despesa" id="btnTipoDespesa" type="button">Despesa</button>
+                    <button class="tipo-btn receita" id="btnTipoReceita" type="button">Receita</button>
+                    <input type="hidden" id="tipo" value="despesa" />
+                </div>
+
+                <!-- Campos básicos -->
+                <label class="field-label" for="descricao">Descrição</label>
+                <input type="text" id="descricao" placeholder="Ex: Supermercado" required />
+
+                <label class="field-label" for="valor">Valor (R$)</label>
+                <input type="number" id="valor" placeholder="0,00" step="0.01" min="0.01" required />
+
+                <!-- Linha com categoria e data -->
+                <div class="form-grid-2">
+                    <div>
+                        <label class="field-label" for="categoria">Categoria</label>
+                        <select id="categoria" required>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="field-label" for="data">Data</label>
+                        <input type="date" id="data" required />
+                    </div>
+                </div>
+
+                <!-- Campos de parcelamento para despesas -->
+                <div class="parcel-wrap" id="parcelWrap">
+                    <label><input type="checkbox" id="parcelado" /> Despesa parcelada</label>
+                    <input type="number" id="parcelas" min="2" max="48" placeholder="Número de parcelas" disabled />
+                </div>
+
+                <button class="btn-primary" type="submit">Salvar transação</button>
+            </form>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

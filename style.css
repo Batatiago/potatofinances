@@ -1,0 +1,602 @@
+﻿/* Variáveis globais: cores e tokens reutilizáveis do tema */
+:root {
+    --bg: #f3f6fb;
+    --panel: #ffffff;
+    --stroke: #e6ebf3;
+    --text: #0f1d3a;
+    --muted: #7f91b2;
+    --purple: #6f3ef0;
+    --green: #08b670;
+    --red: #ff3f67;
+    --blue: #3a7fed;
+    --surface-soft: #fbfcff;
+    --surface-muted: #edf2f9;
+}
+
+/* Reset simples para facilitar cálculo de layouts */
+* {
+    box-sizing: border-box;
+}
+
+/* Corpo da página com fundo suave */
+body {
+    margin: 0;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+/* Evita rolagem do fundo quando modal está aberto */
+body.modal-open {
+    overflow: hidden;
+}
+
+/* Tema escuro: sobrescreve variáveis sem duplicar todas as regras */
+body.dark-theme {
+    --bg: #0b1220;
+    --panel: #111a2c;
+    --stroke: #27324a;
+    --text: #e4ebff;
+    --muted: #97a6c8;
+    --surface-soft: #131f35;
+    --surface-muted: #1a2740;
+}
+
+/* Remove margens padrão de títulos e parágrafos */
+h1,
+h2,
+h3,
+p {
+    margin: 0;
+}
+
+/* Barra superior com título e botão principal */
+.topbar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--stroke);
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Bloco esquerdo do cabeçalho: imagem + textos */
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.topbar h1 {
+    font-size: 34px;
+    line-height: 1;
+}
+
+.topbar p {
+    margin-top: 6px;
+    color: var(--muted);
+}
+
+.topbar img {
+    height: 64px;
+    width: 64px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+/* Container principal com largura máxima */
+.container {
+    width: min(1160px, 100% - 32px);
+    margin: 24px auto;
+    display: grid;
+    gap: 20px;
+}
+
+/* Botão de ação principal com gradiente roxo */
+.btn-primary {
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    background: linear-gradient(135deg, #8054ff, var(--purple));
+    color: #fff;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* Botão secundário para alternar tema */
+.btn-ghost {
+    border: 1px solid var(--stroke);
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: var(--surface-soft);
+    color: var(--text);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Área de controle de período (ano + meses) */
+.month-area {
+    display: grid;
+    gap: 12px;
+}
+
+.year-control {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.year-control button {
+    border: 1px solid var(--stroke);
+    background: var(--panel);
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    cursor: pointer;
+    color: #4f6590;
+}
+
+.year-control strong {
+    font-size: 20px;
+    min-width: 70px;
+    text-align: center;
+}
+
+.month-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Botões de mês */
+.chip {
+    border: 1px solid var(--stroke);
+    background: var(--panel);
+    color: #4f6590;
+    padding: 8px 16px;
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.chip.active {
+    background: var(--purple);
+    color: #fff;
+    border-color: transparent;
+}
+
+/* Grade dos cartões de resumo */
+.cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+}
+
+/* Blocos visuais reutilizados */
+.card,
+.panel {
+    background: var(--panel);
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    padding: 18px;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.card h2 {
+    font-size: 23px;
+}
+
+/* Ícones circulares dos cartões */
+.icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: #ede7ff;
+    color: var(--purple);
+}
+
+.icon.danger {
+    background: #ffe8ee;
+    color: var(--red);
+}
+
+/* Valor grande dos cartões */
+.amount {
+    font-size: clamp(28px, 3vw, 40px);
+    font-weight: 800;
+    margin-bottom: 6px;
+}
+
+.amount.positive {
+    color: var(--green);
+}
+
+.amount.negative {
+    color: var(--red);
+}
+
+.card small {
+    color: var(--muted);
+    font-size: 18px;
+}
+
+/* Navegação de abas */
+.tabs {
+    display: inline-flex;
+    border-radius: 16px;
+    padding: 4px;
+    background: var(--surface-muted);
+    width: fit-content;
+}
+
+.tab {
+    border: none;
+    border-radius: 12px;
+    background: transparent;
+    color: #5f7296;
+    font-weight: 600;
+    padding: 10px 18px;
+    cursor: pointer;
+}
+
+.tab.active {
+    background: var(--panel);
+    color: var(--text);
+    box-shadow: 0 2px 10px rgba(16, 31, 67, 0.08);
+    pointer-events: none;
+}
+
+/* Seção de gráficos lado a lado */
+.overview-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+
+.panel h3 {
+    font-size: 24px;
+    margin-bottom: 14px;
+}
+
+/* Canvas ocupa toda largura disponível */
+canvas {
+    width: 100%;
+    display: block;
+}
+
+#barChart {
+    min-height: 260px;
+}
+
+#donutChart {
+    max-width: 280px;
+    margin: 0 auto;
+    min-height: 240px;
+}
+
+/* Legenda dinâmica do gráfico de rosca */
+.legend {
+    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    color: #5e7194;
+    font-size: 14px;
+}
+
+.legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend i {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Cabeçalho da lista de histórico */
+.history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Filtros tipo pill */
+.pill-group {
+    display: inline-flex;
+    background: var(--surface-muted);
+    border-radius: 12px;
+    padding: 4px;
+}
+
+.pill {
+    border: none;
+    background: transparent;
+    color: #6378a0;
+    border-radius: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+}
+
+.pill.active {
+    background: var(--panel);
+    color: var(--text);
+}
+
+/* Lista de transações */
+#listaTransacoes {
+    list-style: none;
+    margin: 18px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 10px;
+}
+
+.transaction-item {
+    border: 1px solid #edf1f8;
+    background: var(--surface-soft);
+    border-radius: 14px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.transaction-main {
+    display: grid;
+    gap: 2px;
+}
+
+.transaction-main strong {
+    font-size: 17px;
+}
+
+.transaction-main span {
+    color: #8a9dbc;
+    font-size: 14px;
+}
+
+/* Badge para lançamentos futuros */
+.future-badge {
+    display: inline-block;
+    background: #eef3ff;
+    color: #3f5f9b;
+    border-radius: 999px;
+    padding: 2px 8px;
+    font-size: 12px;
+    margin-left: 6px;
+}
+
+.transaction-value {
+    font-weight: 800;
+    font-size: 17px;
+    white-space: nowrap;
+}
+
+.transaction-value.receita {
+    color: var(--green);
+}
+
+.transaction-value.despesa {
+    color: var(--red);
+}
+
+.empty-state {
+    color: #8a9dbc;
+    text-align: center;
+    padding: 16px;
+}
+
+/* Overlay escuro para destacar o modal */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 29, 58, 0.45);
+    backdrop-filter: blur(2px);
+    display: none;
+    place-items: center;
+    z-index: 20;
+    padding: 20px;
+}
+
+.modal-overlay.open {
+    display: grid;
+}
+
+/* Caixa branca do modal */
+.modal {
+    width: min(560px, 100%);
+    background: var(--panel);
+    border-radius: 24px;
+    border: 1px solid #dde5f3;
+    overflow: hidden;
+    box-shadow: 0 24px 80px rgba(15, 29, 58, 0.28);
+    animation: modal-in 0.2s ease-out;
+}
+
+@keyframes modal-in {
+    from {
+        transform: translateY(10px) scale(0.98);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* Cabeçalho do modal com botão de fechar */
+.modal-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--stroke);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modal-header h3 {
+    font-size: 33px;
+}
+
+.close-modal {
+    border: none;
+    background: transparent;
+    font-size: 32px;
+    color: #6c7fa3;
+    cursor: pointer;
+    line-height: 1;
+}
+
+/* Formulário interno do modal */
+#formTransacao {
+    padding: 22px 24px 24px;
+    display: grid;
+    gap: 12px;
+}
+
+/* Toggle de tipo (despesa/receita) */
+.tipo-toggle {
+    background: var(--surface-muted);
+    border-radius: 13px;
+    padding: 4px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.tipo-btn {
+    border: none;
+    border-radius: 10px;
+    background: transparent;
+    color: #6a7c9c;
+    padding: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.tipo-btn.despesa.active {
+    background: #f3395c;
+    color: #fff;
+}
+
+.tipo-btn.receita.active {
+    background: #0dbf78;
+    color: #fff;
+}
+
+/* Texto dos rótulos do formulário */
+.field-label {
+    font-size: 20px;
+    font-weight: 700;
+    color: #667a9e;
+    margin-top: 2px;
+}
+
+/* Campos de entrada */
+input,
+select {
+    border: 1px solid var(--stroke);
+    border-radius: 12px;
+    padding: 12px;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--surface-soft);
+}
+
+/* Grid com 2 colunas para categoria e data */
+.form-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+/* Área de parcelamento */
+.parcel-wrap {
+    border: 1px dashed var(--stroke);
+    border-radius: 12px;
+    padding: 10px;
+    display: grid;
+    gap: 8px;
+    align-content: start;
+}
+
+.parcel-wrap label {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    color: #4f6590;
+    font-size: 14px;
+}
+
+/* Ajustes para tablets */
+@media (max-width: 1020px) {
+    .cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Ajustes para celulares */
+@media (max-width: 700px) {
+    .topbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .brand {
+        width: 100%;
+    }
+
+    .topbar-actions {
+        width: 100%;
+        justify-content: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .cards {
+        grid-template-columns: 1fr;
+    }
+
+    .history-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .transaction-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .form-grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-header h3 {
+        font-size: 28px;
+    }
+}
