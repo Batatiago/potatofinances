@@ -311,6 +311,70 @@ canvas {
     display: inline-block;
 }
 
+/* Seção visual de caixinhas */
+.caixinhas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.caixinhas-header small {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.caixinhas-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+}
+
+.caixinha-card {
+    border: 1px solid var(--stroke);
+    background: var(--surface-soft);
+    border-radius: 14px;
+    padding: 12px;
+    display: grid;
+    gap: 8px;
+}
+
+.caixinha-card h4 {
+    margin: 0;
+    font-size: 17px;
+    color: var(--text);
+}
+
+.caixinha-bar {
+    height: 8px;
+    background: rgba(127, 145, 178, 0.2);
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.caixinha-bar span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, #59c5ff, #3a9dff);
+    border-radius: inherit;
+}
+
+.caixinha-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.caixinha-meta strong {
+    color: var(--text);
+}
+
+.caixinha-meta small {
+    color: var(--muted);
+}
+
 /* Cabeçalho da lista de histórico */
 .history-header {
     display: flex;
@@ -361,6 +425,25 @@ canvas {
     gap: 8px;
 }
 
+.transaction-actions {
+    display: inline-flex;
+    gap: 6px;
+}
+
+.action-btn {
+    border: 1px solid var(--stroke);
+    background: var(--surface-soft);
+    color: var(--text);
+    border-radius: 9px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.action-btn.danger {
+    color: var(--red);
+}
+
 .transaction-main {
     display: grid;
     gap: 2px;
@@ -400,6 +483,10 @@ canvas {
     color: var(--red);
 }
 
+.transaction-value.investimento {
+    color: #4bb8ff;
+}
+
 .empty-state {
     color: #8a9dbc;
     text-align: center;
@@ -420,6 +507,49 @@ canvas {
 
 .modal-overlay.open {
     display: grid;
+}
+
+/* Overlay do modal de confirmação de exclusão */
+.confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 29, 58, 0.45);
+    backdrop-filter: blur(2px);
+    display: none;
+    place-items: center;
+    z-index: 30;
+    padding: 20px;
+}
+
+.confirm-overlay.open {
+    display: grid;
+}
+
+.confirm-modal {
+    width: min(460px, 100%);
+    background: var(--panel);
+    border: 1px solid var(--stroke);
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 20px 60px rgba(15, 29, 58, 0.28);
+    display: grid;
+    gap: 10px;
+}
+
+.confirm-modal h3 {
+    font-size: 24px;
+}
+
+.confirm-modal p {
+    color: var(--muted);
+    font-size: 15px;
+}
+
+.confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 /* Caixa branca do modal */
@@ -480,7 +610,7 @@ canvas {
     border-radius: 13px;
     padding: 4px;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 6px;
     margin-bottom: 4px;
 }
@@ -503,6 +633,11 @@ canvas {
 .tipo-btn.receita.active {
     background: #0dbf78;
     color: #fff;
+}
+
+.tipo-btn.investimento.active {
+    background: #4bb8ff;
+    color: #052037;
 }
 
 /* Texto dos rótulos do formulário */
@@ -529,6 +664,50 @@ select {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 10px;
+}
+
+.investimento-wrap {
+    border: 1px dashed var(--stroke);
+    border-radius: 12px;
+    padding: 10px;
+    display: none;
+    gap: 8px;
+}
+
+.caixinhas-list {
+    display: grid;
+    gap: 6px;
+}
+
+.caixinha-add-row {
+    display: grid;
+    grid-template-columns: 1fr 140px auto;
+    gap: 8px;
+}
+
+.caixinha-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: space-between;
+    color: var(--text);
+    font-size: 14px;
+}
+
+.caixinha-item-main {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.caixinha-delete {
+    border: 1px solid var(--stroke);
+    background: transparent;
+    color: var(--red);
+    border-radius: 8px;
+    padding: 2px 8px;
+    font-size: 12px;
+    cursor: pointer;
 }
 
 /* Área de parcelamento */
@@ -596,7 +775,15 @@ select {
         grid-template-columns: 1fr;
     }
 
+    .caixinha-add-row {
+        grid-template-columns: 1fr;
+    }
+
     .modal-header h3 {
         font-size: 28px;
+    }
+
+    .confirm-actions {
+        justify-content: stretch;
     }
 }

@@ -71,7 +71,7 @@
                     <span class="icon">📊</span>
                 </div>
                 <p class="amount" id="totalInvestimentos">R$ 0,00</p>
-                <small>total na categoria Investimentos</small>
+                <small>total em transações de investimento</small>
             </article>
         </section>
 
@@ -85,8 +85,8 @@
         <!-- Área de gráficos -->
         <section class="overview-grid">
             <article class="panel chart-panel">
-                <h3 id="barTitle">Receitas x Despesas</h3>
-                <canvas id="barChart" aria-label="Gráfico de receitas e despesas"></canvas>
+                <h3 id="barTitle">Visão anual</h3>
+                <canvas id="barChart" aria-label="Gráfico anual de receitas, despesas e investimentos"></canvas>
             </article>
 
             <article class="panel donut-panel">
@@ -94,6 +94,15 @@
                 <canvas id="donutChart" aria-label="Gráfico de gastos por categoria"></canvas>
                 <div class="legend" id="donutLegend"></div>
             </article>
+        </section>
+
+        <!-- Caixinhas visuais de investimento -->
+        <section class="panel caixinhas-panel">
+            <div class="caixinhas-header">
+                <h3>Caixinhas de investimento</h3>
+                <small id="caixinhasResumo">Total: R$ 0,00</small>
+            </div>
+            <div id="caixinhasCards" class="caixinhas-cards"></div>
         </section>
 
         <!-- Histórico de transações do mês/ano selecionado -->
@@ -104,6 +113,7 @@
                     <button class="pill active" id="filtroTodas" type="button">Todas</button>
                     <button class="pill" id="filtroReceitas" type="button">Receitas</button>
                     <button class="pill" id="filtroDespesas" type="button">Despesas</button>
+                    <button class="pill" id="filtroInvestimentos" type="button">Investimentos</button>
                 </div>
             </div>
             <ul id="listaTransacoes"></ul>
@@ -125,19 +135,20 @@
                 <div class="tipo-toggle" aria-label="Tipo de transação">
                     <button class="tipo-btn active despesa" id="btnTipoDespesa" type="button">Despesa</button>
                     <button class="tipo-btn receita" id="btnTipoReceita" type="button">Receita</button>
+                    <button class="tipo-btn investimento" id="btnTipoInvestimento" type="button">Investimento</button>
                     <input type="hidden" id="tipo" value="despesa" />
                 </div>
 
                 <!-- Campos básicos -->
                 <label class="field-label" for="descricao">Descrição</label>
-                <input type="text" id="descricao" placeholder="Ex: Supermercado" required />
+                <input type="text" id="descricao" placeholder="Ex: Supermercado" />
 
                 <label class="field-label" for="valor">Valor (R$)</label>
                 <input type="number" id="valor" placeholder="0,00" step="0.01" min="0.01" required />
 
                 <!-- Linha com categoria e data -->
                 <div class="form-grid-2">
-                    <div>
+                    <div id="categoriaWrap">
                         <label class="field-label" for="categoria">Categoria</label>
                         <select id="categoria" required>
                             <option value="Outros">Outros</option>
@@ -147,6 +158,17 @@
                     <div>
                         <label class="field-label" for="data">Data</label>
                         <input type="date" id="data" required />
+                    </div>
+                </div>
+
+                <!-- Campos específicos para investimentos -->
+                <div class="investimento-wrap" id="investimentoWrap">
+                    <label class="field-label">Caixinhas</label>
+                    <div id="listaCaixinhas" class="caixinhas-list"></div>
+                    <div class="caixinha-add-row">
+                        <input type="text" id="inputNovaCaixinha" placeholder="Digite o nome da nova caixinha" />
+                        <input type="number" id="inputMetaCaixinha" placeholder="Meta (R$)" min="0.01" step="0.01" />
+                        <button class="btn-ghost" id="btnAdicionarCaixinha" type="button">Adicionar caixinha</button>
                     </div>
                 </div>
 
@@ -161,7 +183,21 @@
         </section>
     </div>
 
+    <!-- Modal de confirmação para exclusão de transações -->
+    <div class="confirm-overlay" id="confirmOverlay" aria-hidden="true">
+        <section class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitulo">
+            <h3 id="confirmTitulo">Confirmar exclusão</h3>
+            <p id="confirmMensagem">Deseja realmente apagar esta transação?</p>
+            <div class="confirm-actions">
+                <button class="btn-ghost" id="btnConfirmCancelar" type="button">Cancelar</button>
+                <button class="btn-ghost" id="btnConfirmAtual" type="button">Apagar este mês</button>
+                <button class="btn-primary" id="btnConfirmTodas" type="button">Apagar todos os meses</button>
+            </div>
+        </section>
+    </div>
+
     <script src="script.js"></script>
 </body>
 
 </html>
+
