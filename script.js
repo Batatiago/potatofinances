@@ -9,6 +9,8 @@ const categoriaWrap = document.getElementById("categoriaWrap");
 const parceladoInput = document.getElementById("parcelado");
 const parcelasInput = document.getElementById("parcelas");
 const parcelWrap = document.getElementById("parcelWrap");
+const pagamentoWrap = document.getElementById("pagamentoWrap");
+const formaPagamentoInput = document.getElementById("formaPagamento");
 const investimentoWrap = document.getElementById("investimentoWrap");
 const listaCaixinhasEl = document.getElementById("listaCaixinhas");
 const btnAdicionarCaixinha = document.getElementById("btnAdicionarCaixinha");
@@ -66,7 +68,20 @@ const donutChartCanvas = document.getElementById("donutChart");
 const donutLegendEl = document.getElementById("donutLegend");
 
 // Nomes dos meses para interface.
-const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const meses = [
+  "Jan",
+  "Fev",
+  "Mar",
+  "Abr",
+  "Mai",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Set",
+  "Out",
+  "Nov",
+  "Dez",
+];
 
 // Categorias por tipo.
 const categoriasDespesa = [
@@ -78,15 +93,20 @@ const categoriasDespesa = [
   "Educação",
   "Roupas",
   "Tecnologia",
-  "Outros"
+  "Outros",
 ];
 
-const categoriasReceita = ["Salário", "Salário Abbraccio", "Freelance", "Outros"];
+const categoriasReceita = [
+  "Salário",
+  "Salário Abbraccio",
+  "Freelance",
+  "Outros",
+];
 
 // Cores da rosca por categoria.
 const categoriaCores = {
   Moradia: "#7e55f6",
-  "Alimentação": "#e34195",
+  Alimentação: "#e34195",
   Saúde: "#f5aa14",
   Tecnologia: "#00b985",
   Lazer: "#3a7fed",
@@ -97,12 +117,16 @@ const categoriaCores = {
   "Salário Abbraccio": "#05995c",
   Freelance: "#34b67a",
   Investimentos: "#4bb8ff",
-  Outros: "#8fa1c0"
+  Outros: "#8fa1c0",
 };
 
 // Recupera transações e caixinhas salvas.
-let transacoes = normalizarTransacoes(JSON.parse(localStorage.getItem("transacoes")) || []);
-let caixinhas = normalizarCaixinhas(JSON.parse(localStorage.getItem("caixinhasInvestimento")) || []);
+let transacoes = normalizarTransacoes(
+  JSON.parse(localStorage.getItem("transacoes")) || [],
+);
+let caixinhas = normalizarCaixinhas(
+  JSON.parse(localStorage.getItem("caixinhasInvestimento")) || [],
+);
 
 // Guarda edição atual. Quando null, está em modo de criação.
 let transacaoEmEdicaoId = null;
@@ -160,19 +184,26 @@ function formatarDataVisual(isoDate) {
 // Normaliza transações antigas para o formato novo.
 function normalizarTransacoes(lista) {
   return lista.map((item) => {
-    const dataSegura = typeof item.data === "string" && item.data ? item.data : formatarDataInput(new Date());
+    const dataSegura =
+      typeof item.data === "string" && item.data
+        ? item.data
+        : formatarDataInput(new Date());
 
     return {
       id: item.id || `tx-${Math.random().toString(36).slice(2, 10)}`,
       descricao: item.descricao || "Transação sem descrição",
       valor: Number(item.valor) || 0,
-      tipo: ["receita", "despesa", "investimento"].includes(item.tipo) ? item.tipo : "despesa",
+      tipo: ["receita", "despesa", "investimento"].includes(item.tipo)
+        ? item.tipo
+        : "despesa",
       data: dataSegura,
       categoria: item.categoria || "Outros",
+      formaPagamento:
+        item.formaPagamento || (item.tipo === "despesa" ? "Cartão" : null),
       parcelaAtual: item.parcelaAtual || null,
       totalParcelas: item.totalParcelas || null,
       parcelamentoId: item.parcelamentoId || null,
-      caixinhas: Array.isArray(item.caixinhas) ? item.caixinhas : []
+      caixinhas: Array.isArray(item.caixinhas) ? item.caixinhas : [],
     };
   });
 }
@@ -187,7 +218,7 @@ function normalizarCaixinhas(lista) {
 
       return {
         nome: (item?.nome || "").trim(),
-        meta: Number(item?.meta) || 0
+        meta: Number(item?.meta) || 0,
       };
     })
     .filter((item) => item.nome);
@@ -203,7 +234,10 @@ function salvar() {
 function obterTransacoesDoPeriodo() {
   return transacoes.filter((t) => {
     const data = new Date(`${t.data}T00:00:00`);
-    return data.getMonth() === mesSelecionado && data.getFullYear() === anoSelecionado;
+    return (
+      data.getMonth() === mesSelecionado &&
+      data.getFullYear() === anoSelecionado
+    );
   });
 }
 
@@ -234,14 +268,20 @@ function renderizarBotoesMes() {
 
 // Atualiza estado dos filtros de histórico.
 function atualizarBotoesFiltro() {
-  [filtroTodasBtn, filtroReceitasBtn, filtroDespesasBtn, filtroInvestimentosBtn].forEach((btn) => {
+  [
+    filtroTodasBtn,
+    filtroReceitasBtn,
+    filtroDespesasBtn,
+    filtroInvestimentosBtn,
+  ].forEach((btn) => {
     btn.classList.remove("active");
   });
 
   if (filtroAtual === "todas") filtroTodasBtn.classList.add("active");
   if (filtroAtual === "receita") filtroReceitasBtn.classList.add("active");
   if (filtroAtual === "despesa") filtroDespesasBtn.classList.add("active");
-  if (filtroAtual === "investimento") filtroInvestimentosBtn.classList.add("active");
+  if (filtroAtual === "investimento")
+    filtroInvestimentosBtn.classList.add("active");
 }
 
 // Define tipo e atualiza botões visuais.
@@ -285,10 +325,17 @@ function atualizarEstadoParcelamento() {
   const deveExibir = tipo === "despesa";
 
   parcelWrap.style.display = deveExibir ? "grid" : "none";
+  pagamentoWrap.style.display = deveExibir ? "grid" : "none";
   parcelasInput.disabled = !(deveExibir && parcelado);
+  parcelasInput.required = Boolean(deveExibir && parcelado);
+  parcelasInput.setCustomValidity("");
 
   if (!deveExibir || !parcelado) {
     parcelasInput.value = "";
+  }
+
+  if (!deveExibir) {
+    formaPagamentoInput.value = "Cartão";
   }
 }
 
@@ -297,7 +344,9 @@ function atualizarEstadoInvestimento() {
   const investimentoAtivo = tipoInput.value === "investimento";
   investimentoWrap.style.display = investimentoAtivo ? "grid" : "none";
   categoriaWrap.style.display = investimentoAtivo ? "none" : "block";
-  descricaoInput.placeholder = investimentoAtivo ? "Opcional para investimento" : "Ex: Supermercado";
+  descricaoInput.placeholder = investimentoAtivo
+    ? "Opcional para investimento"
+    : "Ex: Supermercado";
 }
 
 // Renderiza checkboxes de caixinhas.
@@ -345,7 +394,9 @@ function renderizarCaixinhas(selecionadas = []) {
 
 // Retorna as caixinhas marcadas no formulário.
 function obterCaixinhasSelecionadas() {
-  return Array.from(listaCaixinhasEl.querySelectorAll("input[type='checkbox']:checked")).map((el) => el.value);
+  return Array.from(
+    listaCaixinhasEl.querySelectorAll("input[type='checkbox']:checked"),
+  ).map((el) => el.value);
 }
 
 // Exclui uma caixinha e remove referência dela nas transações.
@@ -353,15 +404,18 @@ function excluirCaixinha(nome) {
   caixinhas = caixinhas.filter((caixinha) => caixinha.nome !== nome);
 
   transacoes = transacoes.map((transacao) => {
-    if (!Array.isArray(transacao.caixinhas) || transacao.caixinhas.length === 0) return transacao;
+    if (!Array.isArray(transacao.caixinhas) || transacao.caixinhas.length === 0)
+      return transacao;
     return {
       ...transacao,
-      caixinhas: transacao.caixinhas.filter((item) => item !== nome)
+      caixinhas: transacao.caixinhas.filter((item) => item !== nome),
     };
   });
 
   salvar();
-  renderizarCaixinhas(obterCaixinhasSelecionadas().filter((item) => item !== nome));
+  renderizarCaixinhas(
+    obterCaixinhasSelecionadas().filter((item) => item !== nome),
+  );
   atualizarDashboard();
 }
 
@@ -387,6 +441,7 @@ function prepararModoCriacao() {
   form.reset();
   dataInput.value = formatarDataInput(new Date());
   definirTipo("despesa");
+  formaPagamentoInput.value = "Cartão";
   renderizarCaixinhas([]);
   inputNovaCaixinha.value = "";
   inputMetaCaixinha.value = "";
@@ -404,6 +459,7 @@ function iniciarEdicao(transacao) {
   if (transacao.tipo !== "investimento") {
     categoriaInput.value = transacao.categoria;
   }
+  formaPagamentoInput.value = transacao.formaPagamento || "Cartão";
 
   renderizarCaixinhas(transacao.caixinhas || []);
 
@@ -429,7 +485,9 @@ function obterParcelasRelacionadas(transacao) {
   }
 
   if (transacao.parcelamentoId) {
-    return transacoes.filter((t) => t.parcelamentoId === transacao.parcelamentoId);
+    return transacoes.filter(
+      (t) => t.parcelamentoId === transacao.parcelamentoId,
+    );
   }
 
   // Fallback para dados antigos sem parcelamentoId.
@@ -452,14 +510,16 @@ function abrirConfirmacaoExclusao(transacao) {
   exclusaoPendente = {
     idAtual: transacao.id,
     idsRelacionadas: relacionadas.map((t) => t.id),
-    ehParcelada
+    ehParcelada,
   };
 
   confirmMensagem.textContent = ehParcelada
     ? "Esta é uma despesa parcelada. Você quer apagar apenas esta parcela ou todas as parcelas (todos os meses)?"
     : "Deseja realmente apagar esta transação?";
 
-  btnConfirmAtual.textContent = ehParcelada ? "Apagar só esta parcela" : "Apagar transação";
+  btnConfirmAtual.textContent = ehParcelada
+    ? "Apagar só esta parcela"
+    : "Apagar transação";
   btnConfirmTodas.style.display = ehParcelada ? "inline-flex" : "none";
 
   confirmOverlay.classList.add("open");
@@ -499,7 +559,12 @@ function desenharGraficoBarrasAnual(ano) {
     if (t.tipo === "investimento") investimentosMes[mes] += t.valor;
   });
 
-  const maxValor = Math.max(1, ...receitasMes, ...despesasMes, ...investimentosMes);
+  const maxValor = Math.max(
+    1,
+    ...receitasMes,
+    ...despesasMes,
+    ...investimentosMes,
+  );
 
   const paddingLeft = 42;
   const paddingRight = 16;
@@ -563,7 +628,12 @@ function desenharGraficoBarrasAnual(ano) {
   ctx.fillStyle = "#9fb0d1";
   ctx.fillText("Investimentos", paddingLeft + 190, 13);
 
-  if (maxValor === 1 && receitasMes.every((v) => v === 0) && despesasMes.every((v) => v === 0) && investimentosMes.every((v) => v === 0)) {
+  if (
+    maxValor === 1 &&
+    receitasMes.every((v) => v === 0) &&
+    despesasMes.every((v) => v === 0) &&
+    investimentosMes.every((v) => v === 0)
+  ) {
     ctx.fillStyle = "#8a9dbc";
     ctx.fillText("Sem dados no ano selecionado", paddingLeft, 30);
   }
@@ -610,7 +680,8 @@ function desenharGraficoDonut(transacoesPeriodo) {
     ctx.textAlign = "center";
     ctx.fillText("Sem despesas", cx, cy + 5);
 
-    donutLegendEl.innerHTML = "<span><i style='background:#e9eef7'></i>Sem dados</span>";
+    donutLegendEl.innerHTML =
+      "<span><i style='background:#e9eef7'></i>Sem dados</span>";
     return;
   }
 
@@ -652,7 +723,8 @@ function renderizarHistorico(transacoesPeriodo) {
   if (listaFiltrada.length === 0) {
     const vazio = document.createElement("li");
     vazio.className = "empty-state";
-    vazio.textContent = "Nenhuma transação neste mês para o filtro selecionado.";
+    vazio.textContent =
+      "Nenhuma transação neste mês para o filtro selecionado.";
     listaTransacoes.appendChild(vazio);
     return;
   }
@@ -663,14 +735,23 @@ function renderizarHistorico(transacoesPeriodo) {
     const item = document.createElement("li");
     item.className = "transaction-item";
 
-    const parcelaTexto = t.parcelaAtual && t.totalParcelas ? ` • Parcela ${t.parcelaAtual}/${t.totalParcelas}` : "";
-    const futuroTexto = t.data > hojeISO ? '<span class="future-badge">Futura</span>' : "";
-    const caixinhasTexto = t.tipo === "investimento" && t.caixinhas?.length > 0 ? ` • Caixinhas: ${t.caixinhas.join(", ")}` : "";
+    const parcelaTexto =
+      t.parcelaAtual && t.totalParcelas
+        ? ` • Parcela ${t.parcelaAtual}/${t.totalParcelas}`
+        : "";
+    const futuroTexto =
+      t.data > hojeISO ? '<span class="future-badge">Futura</span>' : "";
+    const pagamentoTexto =
+      t.tipo === "despesa" ? ` • ${t.formaPagamento || "Cartão"}` : "";
+    const caixinhasTexto =
+      t.tipo === "investimento" && t.caixinhas?.length > 0
+        ? ` • Caixinhas: ${t.caixinhas.join(", ")}`
+        : "";
 
     item.innerHTML = `
       <div class=\"transaction-main\">
         <strong>${t.descricao} ${futuroTexto}</strong>
-        <span>${t.categoria} • ${formatarDataVisual(t.data)}${parcelaTexto}${caixinhasTexto}</span>
+        <span>${t.categoria}${pagamentoTexto} • ${formatarDataVisual(t.data)}${parcelaTexto}${caixinhasTexto}</span>
       </div>
       <div class=\"transaction-actions\">
         <span class=\"transaction-value ${t.tipo}\">${t.tipo === "despesa" ? "-" : "+"}${formatarMoeda(t.valor)}</span>
@@ -685,7 +766,9 @@ function renderizarHistorico(transacoesPeriodo) {
 
 // Renderiza os cards visuais das caixinhas de investimento.
 function renderizarCaixinhasVisuais(transacoesPeriodo) {
-  const investimentos = transacoesPeriodo.filter((t) => t.tipo === "investimento");
+  const investimentos = transacoesPeriodo.filter(
+    (t) => t.tipo === "investimento",
+  );
   const totais = {};
 
   caixinhas.forEach(({ nome }) => {
@@ -703,7 +786,10 @@ function renderizarCaixinhasVisuais(transacoesPeriodo) {
     });
   });
 
-  const totalInvestido = Object.values(totais).reduce((acc, valor) => acc + valor, 0);
+  const totalInvestido = Object.values(totais).reduce(
+    (acc, valor) => acc + valor,
+    0,
+  );
   caixinhasResumoEl.textContent = `Total: ${formatarMoeda(totalInvestido)}`;
 
   caixinhasCardsEl.innerHTML = "";
@@ -750,10 +836,27 @@ function atualizarDashboard() {
     .filter((t) => t.tipo === "investimento")
     .reduce((acc, t) => acc + t.valor, 0);
 
-  const qtdReceitas = transacoesPeriodo.filter((t) => t.tipo === "receita").length;
-  const qtdDespesas = transacoesPeriodo.filter((t) => t.tipo === "despesa").length;
+  const qtdReceitas = transacoesPeriodo.filter(
+    (t) => t.tipo === "receita",
+  ).length;
+  const qtdDespesas = transacoesPeriodo.filter(
+    (t) => t.tipo === "despesa",
+  ).length;
 
-  const saldo = receitas - despesas - investimentos;
+  // Saldo é global: soma receitas e desconta apenas despesas em Dinheiro/Pix.
+  const receitasNoSaldo = transacoes
+    .filter((t) => t.tipo === "receita")
+    .reduce((acc, t) => acc + t.valor, 0);
+
+  const despesasNoSaldo = transacoes
+    .filter(
+      (t) =>
+        t.tipo === "despesa" &&
+        ["Dinheiro", "Pix"].includes(t.formaPagamento || ""),
+    )
+    .reduce((acc, t) => acc + t.valor, 0);
+
+  const saldo = receitasNoSaldo - despesasNoSaldo;
 
   selectedYearEl.textContent = String(anoSelecionado);
   historyTitleEl.textContent = `${meses[mesSelecionado]} - ${anoSelecionado} (${transacoesPeriodo.length} transações)`;
@@ -815,9 +918,21 @@ form.addEventListener("submit", (evento) => {
   const valor = Number.parseFloat(valorInput.value);
   const data = dataInput.value;
   const tipo = tipoInput.value;
-  const descricao = tipo === "investimento" ? (descricaoDigitada || "Investimento") : descricaoDigitada;
+  const formaPagamento =
+    tipo === "despesa" ? formaPagamentoInput.value || "Cartão" : null;
+  const descricao =
+    tipo === "investimento"
+      ? descricaoDigitada || "Investimento"
+      : descricaoDigitada;
 
-  if (!descricao && tipo !== "investimento") return;
+  descricaoInput.setCustomValidity("");
+  if (!descricao && tipo !== "investimento") {
+    descricaoInput.setCustomValidity(
+      "Informe a descrição para despesas e receitas.",
+    );
+    descricaoInput.reportValidity();
+    return;
+  }
   if (Number.isNaN(valor) || valor <= 0) return;
   if (!data) return;
   if (!["receita", "despesa", "investimento"].includes(tipo)) return;
@@ -831,21 +946,37 @@ form.addEventListener("submit", (evento) => {
     alvo.valor = valor;
     alvo.data = data;
     alvo.tipo = tipo;
-    alvo.categoria = tipo === "investimento" ? "Investimentos" : (categoriaInput.value || "Outros");
-    alvo.caixinhas = tipo === "investimento" ? obterCaixinhasSelecionadas() : [];
+    alvo.categoria =
+      tipo === "investimento"
+        ? "Investimentos"
+        : categoriaInput.value || "Outros";
+    alvo.formaPagamento = formaPagamento;
+    alvo.caixinhas =
+      tipo === "investimento" ? obterCaixinhasSelecionadas() : [];
     if (!eraParcelada || tipo !== "despesa") {
       alvo.parcelaAtual = null;
       alvo.totalParcelas = null;
       alvo.parcelamentoId = null;
     }
   } else {
-    const categoria = tipo === "investimento" ? "Investimentos" : (categoriaInput.value || "Outros");
-    const caixinhasSelecionadas = tipo === "investimento" ? obterCaixinhasSelecionadas() : [];
+    const categoria =
+      tipo === "investimento"
+        ? "Investimentos"
+        : categoriaInput.value || "Outros";
+    const caixinhasSelecionadas =
+      tipo === "investimento" ? obterCaixinhasSelecionadas() : [];
 
     const isParcelada = tipo === "despesa" && parceladoInput.checked;
-    const totalParcelas = isParcelada ? Number.parseInt(parcelasInput.value, 10) : 1;
+    const totalParcelas = isParcelada
+      ? Number.parseInt(parcelasInput.value, 10)
+      : 1;
 
-    if (isParcelada && (!totalParcelas || totalParcelas < 2)) return;
+    if (isParcelada && (!totalParcelas || totalParcelas < 2 || totalParcelas > 48)) {
+      parcelasInput.setCustomValidity("Informe entre 2 e 48 parcelas.");
+      parcelasInput.reportValidity();
+      return;
+    }
+    parcelasInput.setCustomValidity("");
 
     if (isParcelada) {
       const parcelamentoId = `parc-${Math.random().toString(36).slice(2, 10)}`;
@@ -859,10 +990,11 @@ form.addEventListener("submit", (evento) => {
           tipo,
           data: adicionarMeses(data, indice),
           categoria,
+          formaPagamento,
           parcelaAtual: indice + 1,
           totalParcelas,
           parcelamentoId,
-          caixinhas: []
+          caixinhas: [],
         });
       });
     } else {
@@ -873,10 +1005,11 @@ form.addEventListener("submit", (evento) => {
         tipo,
         data,
         categoria,
+        formaPagamento,
         parcelaAtual: null,
         totalParcelas: null,
         parcelamentoId: null,
-        caixinhas: caixinhasSelecionadas
+        caixinhas: caixinhasSelecionadas,
       });
     }
   }
@@ -947,10 +1080,15 @@ nextYearBtn.addEventListener("click", () => {
 // Botões de tipo no modal.
 btnTipoDespesa.addEventListener("click", () => definirTipo("despesa"));
 btnTipoReceita.addEventListener("click", () => definirTipo("receita"));
-btnTipoInvestimento.addEventListener("click", () => definirTipo("investimento"));
+btnTipoInvestimento.addEventListener("click", () =>
+  definirTipo("investimento"),
+);
 
 // Controle de parcelamento.
 parceladoInput.addEventListener("change", atualizarEstadoParcelamento);
+parceladoInput.addEventListener("change", () => parcelasInput.setCustomValidity(""));
+parcelasInput.addEventListener("input", () => parcelasInput.setCustomValidity(""));
+descricaoInput.addEventListener("input", () => descricaoInput.setCustomValidity(""));
 
 // Abertura/fechamento do modal.
 btnAbrirModal.addEventListener("click", () => {
@@ -971,7 +1109,8 @@ btnAdicionarCaixinha.addEventListener("click", () => {
   if (!nomeLimpo) return;
   if (Number.isNaN(meta) || meta <= 0) return;
 
-  if (caixinhas.some((c) => c.nome.toLowerCase() === nomeLimpo.toLowerCase())) return;
+  if (caixinhas.some((c) => c.nome.toLowerCase() === nomeLimpo.toLowerCase()))
+    return;
 
   caixinhas.push({ nome: nomeLimpo, meta });
   salvar();

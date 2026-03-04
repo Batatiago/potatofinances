@@ -666,6 +666,11 @@ select {
     gap: 10px;
 }
 
+.pagamento-wrap {
+    display: none;
+    gap: 8px;
+}
+
 .investimento-wrap {
     border: 1px dashed var(--stroke);
     border-radius: 12px;
