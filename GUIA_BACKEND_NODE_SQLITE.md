@@ -89,6 +89,12 @@ Depois, ajuste seu `package.json` com scripts:
 - `jsonwebtoken`: gera e valida token JWT.
 - `nodemon`: reinicia servidor automaticamente durante desenvolvimento.
 
+#### Para iniciantes (o que está acontecendo neste passo)
+- `npm init -y` cria o `package.json`, que é o arquivo de configuração do projeto Node.
+- `npm install ...` adiciona dependências de produção na pasta `node_modules` e registra no `package.json`.
+- `npm install -D nodemon` instala dependência de desenvolvimento (`devDependency`), usada só no ambiente de dev.
+- Os scripts `dev` e `start` são atalhos para subir sua API sem digitar comandos longos.
+
 ---
 
 ### Passo 2 — Criar estrutura de pastas
@@ -119,6 +125,13 @@ backend/
   package.json
 ```
 
+#### Para iniciantes (por que separar em pastas)
+- `controllers`: regras de negócio (o que fazer quando uma rota é chamada).
+- `routes`: define os endpoints (`GET`, `POST`, etc.) e conecta aos controllers.
+- `middlewares`: funções que executam no meio da requisição (ex.: autenticação).
+- `database`: conexão e inicialização de tabelas.
+- Essa separação deixa o projeto mais fácil de manter e estudar.
+
 ---
 
 ### Passo 3 — Configurar variáveis de ambiente
@@ -133,6 +146,11 @@ JWT_SECRET=troque_esse_valor_no_futuro
 #### Explicação
 - `PORT`: porta onde a API roda.
 - `JWT_SECRET`: “senha mestra” para assinar o token JWT.
+
+#### Para iniciantes (boas práticas)
+- Nunca commitar `.env` em repositório público.
+- Em produção, o `JWT_SECRET` deve ser longo, aleatório e diferente por ambiente.
+- Se `JWT_SECRET` mudar, tokens antigos deixam de funcionar (isso é esperado).
 
 ---
 
@@ -163,6 +181,10 @@ export async function getDb() {
   - Caminho do arquivo físico do banco SQLite.
 - `driver: sqlite3.Database`
   - Diz para `open()` qual driver usar.
+
+#### Para iniciantes (observação importante)
+- Este exemplo abre conexão toda vez que `getDb()` é chamado. Para estudo funciona bem.
+- Em projetos maiores, você pode manter uma conexão compartilhada para melhorar desempenho.
 
 ---
 
@@ -207,6 +229,27 @@ export async function initDb() {
 - `transactions` guarda movimentações financeiras ligadas ao usuário por `user_id`.
 - `CHECK(type IN ...)` limita os tipos válidos.
 - Índice `idx_transactions_user_date` acelera listagem por usuário/período.
+
+#### Explicação linha por linha (por que esse trecho está em string)
+- `await db.exec(`...`)`:
+  - O método `exec` do SQLite recebe **SQL em texto**. Por isso usamos string/template string.
+  - Aqui a crase (`` ` ``) permite escrever SQL em múltiplas linhas e com melhor leitura.
+- `CREATE TABLE IF NOT EXISTS users (...)`:
+  - Cria a tabela de usuários apenas se ainda não existir.
+  - `id INTEGER PRIMARY KEY AUTOINCREMENT`: identificador único incremental.
+  - `email TEXT NOT NULL UNIQUE`: e-mail obrigatório e sem duplicidade.
+  - `password_hash`: guarda hash da senha, não senha em texto puro.
+- `CREATE TABLE IF NOT EXISTS transactions (...)`:
+  - Cria tabela de transações ligadas ao usuário.
+  - `user_id INTEGER NOT NULL`: chave de relação com o dono da transação.
+  - `type TEXT ... CHECK(...)`: restringe tipo para `receita`, `despesa` ou `investimento`.
+  - `amount REAL NOT NULL`: valor numérico da transação.
+  - `FOREIGN KEY(user_id) REFERENCES users(id)`: define vínculo com `users`.
+- `CREATE INDEX IF NOT EXISTS idx_transactions_user_date ...`:
+  - Cria índice para acelerar filtros por usuário e data.
+
+> Regra prática: string SQL é normal em comandos de criação de tabela (`CREATE`, `ALTER`, `INDEX`).
+> Para dados dinâmicos do usuário (ex.: email, descrição, valor), use placeholders `?` com parâmetros (`db.get`, `db.run`) para segurança.
 
 ---
 
@@ -285,6 +328,11 @@ export async function login(req, res) {
 - `jwt.sign(payload, secret, options)`:
   - cria token assinado para autenticação.
 
+#### Para iniciantes (fluxo mental)
+- Cadastro e login são separados: cadastro cria usuário, login só autentica usuário existente.
+- A senha nunca deve ser salva em texto puro; sempre hash.
+- JWT funciona como “credencial temporária”: o front envia o token a cada requisição protegida.
+
 ---
 
 ### Passo 7 — Middleware de autenticação (`src/middlewares/authMiddleware.js`)
@@ -316,6 +364,11 @@ export function authMiddleware(req, res, next) {
 - Verifica assinatura do token.
 - Injeta usuário autenticado em `req.user`.
 - Chama `next()` para seguir rota.
+
+#### Para iniciantes (como pensar em middleware)
+- Middleware é uma “barreira” antes da rota final.
+- Se o token for inválido, a requisição para no middleware.
+- Se for válido, ele libera a passagem com `next()`.
 
 ---
 
@@ -413,6 +466,11 @@ export async function deleteTransaction(req, res) {
 - `updateTransaction`: atualiza transação apenas se ela pertencer ao usuário.
 - `deleteTransaction`: remove transação do usuário.
 
+#### Para iniciantes (regras de segurança deste passo)
+- Toda operação usa `req.user.id` para garantir isolamento por usuário.
+- Em update/delete, o código confirma se a transação pertence ao usuário antes de alterar/remover.
+- O uso de `?` com array de parâmetros evita injeção de SQL.
+
 ---
 
 ### Passo 9 — Rotas (`src/routes/*.js`)
@@ -457,6 +515,10 @@ export default router;
 #### Explicação
 - `Router()` organiza endpoints por domínio.
 - `router.use(authMiddleware)` protege todas as rotas abaixo.
+
+#### Para iniciantes (ordem importa)
+- Em `transactionRoutes`, o `router.use(authMiddleware)` vem antes dos endpoints.
+- Isso garante que `GET/POST/PUT/DELETE` só rodem para usuários autenticados.
 
 ---
 
@@ -506,6 +568,11 @@ bootstrap();
 - `/health` é rota de teste rápido.
 - `bootstrap()` inicializa banco e sobe servidor.
 
+#### Para iniciantes (separação app x server)
+- `app.js` concentra configuração de middlewares e rotas.
+- `server.js` concentra inicialização (variáveis de ambiente, banco e `listen`).
+- Essa divisão facilita testes no futuro, porque você pode importar só o `app`.
+
 ---
 
 ### Passo 11 — Integrar com o frontend atual
@@ -548,6 +615,11 @@ async function apiFetch(path, options = {}) {
    - listar: `GET /transactions?month=...&year=...`
    - atualizar: `PUT /transactions/:id`
    - apagar: `DELETE /transactions/:id`
+
+#### Para iniciantes (migração sem dor)
+- Faça a troca por partes: primeiro listagem, depois criação, depois edição/exclusão.
+- Evite migrar tudo no mesmo dia: isso reduz bugs e facilita debugar.
+- Sempre valide no navegador + no Insomnia/Postman após cada troca.
 
 ---
 
@@ -593,3 +665,14 @@ Essa sequência evita sobrecarga e te dá progresso visível em cada etapa.
 - Quando ficar confortável, migre de SQLite para PostgreSQL.
 
 Se quiser, no próximo passo eu posso te entregar um **checklist de implementação em formato “tarefas de 30 minutos”** para você executar em blocos curtos.
+
+
+## 7) Checklist rápido de validação por fase
+
+- **Fase 1 (setup)**: servidor sobe com `npm run dev` sem erro.
+- **Fase 2 (banco)**: arquivo `database.sqlite` criado e tabelas existentes.
+- **Fase 3 (auth)**: cadastro retorna `201` e login retorna `token`.
+- **Fase 4 (CRUD)**: criar/listar/editar/remover funciona só para o usuário autenticado.
+- **Fase 5 (frontend)**: dashboard carrega transações da API e não mais do `localStorage`.
+
+Essa checklist ajuda a garantir que cada bloco foi concluído antes de avançar para o próximo.
