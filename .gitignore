@@ -1,3 +1,4 @@
 desktop.ini
 node_modules
 GUIA_BACKEND_NODE_SQLITE.node_modules
+.env
