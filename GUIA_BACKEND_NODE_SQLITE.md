@@ -89,6 +89,12 @@ Depois, ajuste seu `package.json` com scripts:
 - `jsonwebtoken`: gera e valida token JWT.
 - `nodemon`: reinicia servidor automaticamente durante desenvolvimento.
 
+#### Para iniciantes (o que está acontecendo neste passo)
+- `npm init -y` cria o `package.json`, que é o arquivo de configuração do projeto Node.
+- `npm install ...` adiciona dependências de produção na pasta `node_modules` e registra no `package.json`.
+- `npm install -D nodemon` instala dependência de desenvolvimento (`devDependency`), usada só no ambiente de dev.
+- Os scripts `dev` e `start` são atalhos para subir sua API sem digitar comandos longos.
+
 ---
 
 ### Passo 2 — Criar estrutura de pastas
@@ -119,6 +125,13 @@ backend/
   package.json
 ```
 
+#### Para iniciantes (por que separar em pastas)
+- `controllers`: regras de negócio (o que fazer quando uma rota é chamada).
+- `routes`: define os endpoints (`GET`, `POST`, etc.) e conecta aos controllers.
+- `middlewares`: funções que executam no meio da requisição (ex.: autenticação).
+- `database`: conexão e inicialização de tabelas.
+- Essa separação deixa o projeto mais fácil de manter e estudar.
+
 ---
 
 ### Passo 3 — Configurar variáveis de ambiente
@@ -133,6 +146,11 @@ JWT_SECRET=troque_esse_valor_no_futuro
 #### Explicação
 - `PORT`: porta onde a API roda.
 - `JWT_SECRET`: “senha mestra” para assinar o token JWT.
+
+#### Para iniciantes (boas práticas)
+- Nunca commitar `.env` em repositório público.
+- Em produção, o `JWT_SECRET` deve ser longo, aleatório e diferente por ambiente.
+- Se `JWT_SECRET` mudar, tokens antigos deixam de funcionar (isso é esperado).
 
 ---
 
@@ -163,6 +181,10 @@ export async function getDb() {
   - Caminho do arquivo físico do banco SQLite.
 - `driver: sqlite3.Database`
   - Diz para `open()` qual driver usar.
+
+#### Para iniciantes (observação importante)
+- Este exemplo abre conexão toda vez que `getDb()` é chamado. Para estudo funciona bem.
+- Em projetos maiores, você pode manter uma conexão compartilhada para melhorar desempenho.
 
 ---
 
@@ -306,6 +328,11 @@ export async function login(req, res) {
 - `jwt.sign(payload, secret, options)`:
   - cria token assinado para autenticação.
 
+#### Para iniciantes (fluxo mental)
+- Cadastro e login são separados: cadastro cria usuário, login só autentica usuário existente.
+- A senha nunca deve ser salva em texto puro; sempre hash.
+- JWT funciona como “credencial temporária”: o front envia o token a cada requisição protegida.
+
 ---
 
 ### Passo 7 — Middleware de autenticação (`src/middlewares/authMiddleware.js`)
@@ -337,6 +364,11 @@ export function authMiddleware(req, res, next) {
 - Verifica assinatura do token.
 - Injeta usuário autenticado em `req.user`.
 - Chama `next()` para seguir rota.
+
+#### Para iniciantes (como pensar em middleware)
+- Middleware é uma “barreira” antes da rota final.
+- Se o token for inválido, a requisição para no middleware.
+- Se for válido, ele libera a passagem com `next()`.
 
 ---
 
@@ -434,6 +466,11 @@ export async function deleteTransaction(req, res) {
 - `updateTransaction`: atualiza transação apenas se ela pertencer ao usuário.
 - `deleteTransaction`: remove transação do usuário.
 
+#### Para iniciantes (regras de segurança deste passo)
+- Toda operação usa `req.user.id` para garantir isolamento por usuário.
+- Em update/delete, o código confirma se a transação pertence ao usuário antes de alterar/remover.
+- O uso de `?` com array de parâmetros evita injeção de SQL.
+
 ---
 
 ### Passo 9 — Rotas (`src/routes/*.js`)
@@ -478,6 +515,10 @@ export default router;
 #### Explicação
 - `Router()` organiza endpoints por domínio.
 - `router.use(authMiddleware)` protege todas as rotas abaixo.
+
+#### Para iniciantes (ordem importa)
+- Em `transactionRoutes`, o `router.use(authMiddleware)` vem antes dos endpoints.
+- Isso garante que `GET/POST/PUT/DELETE` só rodem para usuários autenticados.
 
 ---
 
@@ -527,6 +568,11 @@ bootstrap();
 - `/health` é rota de teste rápido.
 - `bootstrap()` inicializa banco e sobe servidor.
 
+#### Para iniciantes (separação app x server)
+- `app.js` concentra configuração de middlewares e rotas.
+- `server.js` concentra inicialização (variáveis de ambiente, banco e `listen`).
+- Essa divisão facilita testes no futuro, porque você pode importar só o `app`.
+
 ---
 
 ### Passo 11 — Integrar com o frontend atual
@@ -569,6 +615,11 @@ async function apiFetch(path, options = {}) {
    - listar: `GET /transactions?month=...&year=...`
    - atualizar: `PUT /transactions/:id`
    - apagar: `DELETE /transactions/:id`
+
+#### Para iniciantes (migração sem dor)
+- Faça a troca por partes: primeiro listagem, depois criação, depois edição/exclusão.
+- Evite migrar tudo no mesmo dia: isso reduz bugs e facilita debugar.
+- Sempre valide no navegador + no Insomnia/Postman após cada troca.
 
 ---
 
