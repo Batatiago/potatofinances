@@ -1,4 +1,4 @@
-# Potato Finaces 🥔
+# Potato Finances 🥔
 
 Projetinho pessoal de dashboard financeiro simples.
 
