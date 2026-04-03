@@ -676,3 +676,177 @@ Se quiser, no próximo passo eu posso te entregar um **checklist de implementaç
 - **Fase 5 (frontend)**: dashboard carrega transações da API e não mais do `localStorage`.
 
 Essa checklist ajuda a garantir que cada bloco foi concluído antes de avançar para o próximo.
+
+---
+
+## 8) Conectando ao seu front-end atual (explicação prática)
+
+Se você ficou com dúvida nessa parte, use este mini-plano de conexão em 6 etapas.
+
+### Etapa 1 — Subir o backend e liberar CORS
+No backend (`src/app.js`), garanta:
+
+```js
+app.use(cors());
+app.use(express.json());
+```
+
+Isso permite que o navegador (frontend) chame a API em outra porta, por exemplo `localhost:3001`.
+
+---
+
+### Etapa 2 — Criar configuração de API no `script.js`
+No topo do seu `script.js`, adicione:
+
+```js
+const API_URL = "http://localhost:3001";
+```
+
+#### Para iniciantes
+- Essa constante evita repetir URL em todo lugar.
+- Se mudar a porta depois, você altera só 1 linha.
+
+---
+
+### Etapa 3 — Criar helper de requisição autenticada
+Ainda no `script.js`, adicione:
+
+```js
+async function apiFetch(path, options = {}) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+      ...(options.headers || {}),
+    },
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || "Erro na API");
+  }
+
+  return response.json();
+}
+```
+
+#### Para iniciantes
+- `path` é o “pedaço final” da rota (`/transactions`, por exemplo).
+- `Authorization` envia o token para rotas protegidas.
+- `throw new Error(...)` faz o erro aparecer no front para você tratar com `alert`/mensagem.
+
+---
+
+### Etapa 4 — Login real (para receber token)
+No fluxo de login/cadastro do front:
+
+```js
+async function login(email, password) {
+  const data = await apiFetch("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("usuario", JSON.stringify(data.user));
+}
+```
+
+Sem token salvo, as rotas de transação vão responder `401`.
+
+---
+
+### Etapa 5 — Trocar carregamento inicial do `localStorage` para API
+Hoje você tem algo como `transacoes = ...localStorage...`.
+A migração fica assim:
+
+```js
+let transacoes = [];
+
+async function carregarTransacoesDaApi() {
+  const hoje = new Date();
+  const month = hoje.getMonth() + 1;
+  const year = hoje.getFullYear();
+
+  transacoes = await apiFetch(`/transactions?month=${month}&year=${year}`);
+  atualizarInterface(); // sua função que recalcula cards, lista e gráficos
+}
+```
+
+#### Para iniciantes
+- Primeiro faça só o **carregamento** via API.
+- Depois que funcionar, migre criar/editar/excluir.
+
+---
+
+### Etapa 6 — Trocar CRUD do front para endpoints da API
+Quando salvar nova transação no form:
+
+```js
+await apiFetch("/transactions", {
+  method: "POST",
+  body: JSON.stringify({
+    type: tipo,
+    description: descricao,
+    category: categoria,
+    amount: valor,
+    date: data,
+  }),
+});
+
+await carregarTransacoesDaApi();
+```
+
+Quando editar:
+
+```js
+await apiFetch(`/transactions/${id}`, {
+  method: "PUT",
+  body: JSON.stringify({ type, description, category, amount, date }),
+});
+await carregarTransacoesDaApi();
+```
+
+Quando excluir:
+
+```js
+await apiFetch(`/transactions/${id}`, { method: "DELETE" });
+await carregarTransacoesDaApi();
+```
+
+---
+
+## 9) Erros comuns na conexão front + back (e como resolver)
+
+- **Erro 401 (não autorizado)**
+  - Causa: token não foi salvo ou expirou.
+  - Solução: refazer login e verificar `Authorization: Bearer <token>`.
+
+- **Erro CORS no navegador**
+  - Causa: backend sem `cors()`.
+  - Solução: confirmar `app.use(cors())` no `app.js`.
+
+- **Erro 404 em `/transactions`**
+  - Causa: rota diferente do backend.
+  - Solução: conferir prefixo correto (`/transactions`) e porta (`3001`).
+
+- **Front não atualiza após salvar**
+  - Causa: criou no backend, mas não recarregou lista local.
+  - Solução: chamar `await carregarTransacoesDaApi()` após POST/PUT/DELETE.
+
+---
+
+## 10) Ordem exata para você implementar hoje (sem se perder)
+
+1. Subir backend e testar `/health`.
+2. Fazer login e confirmar que o token ficou no `localStorage`.
+3. Implementar `apiFetch`.
+4. Migrar apenas a listagem (`GET /transactions`).
+5. Migrar criação (`POST /transactions`).
+6. Migrar edição e exclusão.
+7. Por último, remover dependência do `localStorage` para transações.
+
+Essa ordem reduz frustração e facilita debug passo a passo.
