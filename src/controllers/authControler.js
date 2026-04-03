@@ -11,7 +11,9 @@ export async function register(req, res) {
 
   const db = await getDb();
 
-  const existingUser = await db.get("SELECT id FROM users WHERE email = ?", [email]);
+  const existingUser = await db.get("SELECT id FROM users WHERE email = ?", [
+    email,
+  ]);
   if (existingUser) {
     return res.status(409).json({ error: "E-mail já cadastrado." });
   }
@@ -20,7 +22,7 @@ export async function register(req, res) {
 
   const result = await db.run(
     "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-    [name, email, passwordHash]
+    [name, email, passwordHash],
   );
 
   return res.status(201).json({ id: result.lastID, name, email });
@@ -48,8 +50,11 @@ export async function login(req, res) {
   const token = jwt.sign(
     { userId: user.id, email: user.email },
     process.env.JWT_SECRET,
-    { expiresIn: "1d" }
+    { expiresIn: "1d" },
   );
 
-  return res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
+  return res.json({
+    token,
+    user: { id: user.id, name: user.name, email: user.email },
+  });
 }
