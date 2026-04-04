@@ -56,12 +56,15 @@ Hoje, sua aplicação é front-end puro (`index.html`, `style.css`, `script.js`)
 
 ## 3) Passo a passo detalhado (o que fazer e como fazer)
 
-> Execute tudo na raiz do projeto (`/workspace/potatofinances`).
-
 ### Passo 1 — Criar backend e instalar dependências
 
+> Execute `mkdir backend` na raiz do projeto (`/workspace/potatofinances`). Os comandos seguintes (`npm init`, `npm install`, `npm run`) devem ser executados **dentro** da pasta `backend/`.
+
 ```bash
+# Na raiz do projeto:
 mkdir backend
+
+# A partir daqui, tudo dentro de backend/:
 cd backend
 npm init -y
 npm install express sqlite3 sqlite cors dotenv bcryptjs jsonwebtoken
