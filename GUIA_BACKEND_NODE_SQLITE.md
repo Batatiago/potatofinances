@@ -164,15 +164,21 @@ import path from "node:path";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 
+let dbPromise;
+
 export async function getDb() {
+  if (dbPromise) {
+    return dbPromise;
+  }
+
   const dbPath = path.resolve(process.cwd(), "src/database/database.sqlite");
 
-  const db = await open({
+  dbPromise = open({
     filename: dbPath,
     driver: sqlite3.Database,
   });
 
-  return db;
+  return dbPromise;
 }
 ```
 
