@@ -56,28 +56,34 @@ Hoje, sua aplicação é front-end puro (`index.html`, `style.css`, `script.js`)
 
 ## 3) Passo a passo detalhado (o que fazer e como fazer)
 
-> Execute tudo na raiz do projeto (`/workspace/potatofinances`).
-
 ### Passo 1 — Criar backend e instalar dependências
 
+> Execute `mkdir backend` na raiz do projeto (`/workspace/potatofinances`). Os comandos seguintes (`npm init`, `npm install`, `npm run`) devem ser executados **dentro** da pasta `backend/`.
+
 ```bash
+# Na raiz do projeto:
 mkdir backend
+
+# A partir daqui, tudo dentro de backend/:
 cd backend
 npm init -y
 npm install express sqlite3 sqlite cors dotenv bcryptjs jsonwebtoken
 npm install -D nodemon
 ```
 
-Depois, ajuste seu `package.json` com scripts:
+Depois, ajuste seu `package.json` com scripts **e ESM habilitado**:
 
 ```json
 {
+  "type": "module",
   "scripts": {
     "dev": "nodemon src/server.js",
     "start": "node src/server.js"
   }
 }
 ```
+
+> Sem `"type": "module"`, os imports com `import ... from ...` não funcionam como mostrado nos exemplos.
 
 #### O que cada pacote faz
 - `express`: cria a API HTTP.
@@ -157,28 +163,39 @@ JWT_SECRET=troque_esse_valor_no_futuro
 ### Passo 4 — Conexão com banco (`src/database/db.js`)
 
 ```js
+import path from "node:path";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 
+let dbPromise;
+
 export async function getDb() {
-  const db = await open({
-    filename: "./src/database/database.sqlite",
+  if (dbPromise) {
+    return dbPromise;
+  }
+
+  const dbPath = path.resolve(process.cwd(), "src/database/database.sqlite");
+
+  dbPromise = open({
+    filename: dbPath,
     driver: sqlite3.Database,
   });
 
-  return db;
+  return dbPromise;
 }
 ```
 
 #### Explicando cada import/função/variável
+- `import path from "node:path";`
+  - Utilitário nativo do Node para montar caminhos de arquivo de forma confiável.
 - `import sqlite3 from "sqlite3";`
   - Importa o driver SQLite de baixo nível.
 - `import { open } from "sqlite";`
   - Importa a função utilitária que abre conexão com suporte a `async/await`.
 - `getDb()`
   - Função assíncrona para abrir e retornar conexão com o banco.
-- `filename`
-  - Caminho do arquivo físico do banco SQLite.
+- `dbPath = path.resolve(process.cwd(), ...)`
+  - Garante caminho absoluto, evitando criar banco em pasta inesperada.
 - `driver: sqlite3.Database`
   - Diz para `open()` qual driver usar.
 
@@ -196,11 +213,13 @@ import { getDb } from "./db.js";
 export async function initDb() {
   const db = await getDb();
 
+  await db.exec("PRAGMA foreign_keys = ON;");
+
   await db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       name TEXT NOT NULL,
-      email TEXT NOT NULL UNIQUE,
+      email TEXT NOT NULL COLLATE NOCASE UNIQUE,
       password_hash TEXT NOT NULL,
       created_at TEXT DEFAULT CURRENT_TIMESTAMP
     );
@@ -225,9 +244,10 @@ export async function initDb() {
 
 #### Explicação objetiva
 - `initDb()` cria tabelas apenas se não existirem.
-- `users` guarda dados do usuário.
+- `users` guarda dados do usuário (com e-mail único sem diferença de maiúscula/minúscula).
 - `transactions` guarda movimentações financeiras ligadas ao usuário por `user_id`.
 - `CHECK(type IN ...)` limita os tipos válidos.
+- `PRAGMA foreign_keys = ON` ativa de fato a validação de chave estrangeira no SQLite.
 - Índice `idx_transactions_user_date` acelera listagem por usuário/período.
 
 #### Explicação linha por linha (por que esse trecho está em string)
@@ -237,7 +257,7 @@ export async function initDb() {
 - `CREATE TABLE IF NOT EXISTS users (...)`:
   - Cria a tabela de usuários apenas se ainda não existir.
   - `id INTEGER PRIMARY KEY AUTOINCREMENT`: identificador único incremental.
-  - `email TEXT NOT NULL UNIQUE`: e-mail obrigatório e sem duplicidade.
+  - `email TEXT NOT NULL COLLATE NOCASE UNIQUE`: e-mail obrigatório sem duplicidade por variação de caixa.
   - `password_hash`: guarda hash da senha, não senha em texto puro.
 - `CREATE TABLE IF NOT EXISTS transactions (...)`:
   - Cria tabela de transações ligadas ao usuário.
@@ -263,13 +283,15 @@ import { getDb } from "../database/db.js";
 export async function register(req, res) {
   const { name, email, password } = req.body;
 
-  if (!name || !email || !password) {
+  const emailNormalizado = (email || "").trim().toLowerCase();
+
+  if (!name || !emailNormalizado || !password) {
     return res.status(400).json({ error: "Campos obrigatórios ausentes." });
   }
 
   const db = await getDb();
 
-  const existingUser = await db.get("SELECT id FROM users WHERE email = ?", [email]);
+  const existingUser = await db.get("SELECT id FROM users WHERE email = ?", [emailNormalizado]);
   if (existingUser) {
     return res.status(409).json({ error: "E-mail já cadastrado." });
   }
@@ -278,21 +300,22 @@ export async function register(req, res) {
 
   const result = await db.run(
     "INSERT INTO users (name, email, password_hash) VALUES (?, ?, ?)",
-    [name, email, passwordHash]
+    [name, emailNormalizado, passwordHash]
   );
 
-  return res.status(201).json({ id: result.lastID, name, email });
+  return res.status(201).json({ id: result.lastID, name, email: emailNormalizado });
 }
 
 export async function login(req, res) {
   const { email, password } = req.body;
+  const emailNormalizado = (email || "").trim().toLowerCase();
 
-  if (!email || !password) {
+  if (!emailNormalizado || !password) {
     return res.status(400).json({ error: "Campos obrigatórios ausentes." });
   }
 
   const db = await getDb();
-  const user = await db.get("SELECT * FROM users WHERE email = ?", [email]);
+  const user = await db.get("SELECT * FROM users WHERE email = ?", [emailNormalizado]);
 
   if (!user) {
     return res.status(401).json({ error: "Credenciais inválidas." });
@@ -347,7 +370,11 @@ export function authMiddleware(req, res, next) {
     return res.status(401).json({ error: "Token não enviado." });
   }
 
-  const [, token] = authHeader.split(" ");
+  const [scheme, token] = authHeader.split(" ");
+
+  if (scheme !== "Bearer" || !token) {
+    return res.status(401).json({ error: "Formato do token inválido." });
+  }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -380,8 +407,18 @@ import { getDb } from "../database/db.js";
 export async function createTransaction(req, res) {
   const { type, description, category, amount, date } = req.body;
 
-  if (!type || !description || !amount || !date) {
+  if (!type || !description || amount == null || !date) {
     return res.status(400).json({ error: "Campos obrigatórios ausentes." });
+  }
+
+  const allowedTypes = ["receita", "despesa", "investimento"];
+  if (!allowedTypes.includes(type)) {
+    return res.status(400).json({
+      error: "Tipo inválido. Use: receita, despesa ou investimento.",
+    });
+  }
+  if (Number(amount) < 0) {
+    return res.status(400).json({ error: "Valor não pode ser negativo." });
   }
 
   const db = await getDb();
@@ -589,16 +626,22 @@ localStorage.setItem("token", token);
 3. Criar helper de requisição:
 
 ```js
+const API_URL = "http://localhost:3001";
+
 async function apiFetch(path, options = {}) {
   const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
 
-  const response = await fetch(`http://localhost:3001${path}`, {
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: token ? `Bearer ${token}` : "",
-      ...(options.headers || {}),
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -676,3 +719,197 @@ Se quiser, no próximo passo eu posso te entregar um **checklist de implementaç
 - **Fase 5 (frontend)**: dashboard carrega transações da API e não mais do `localStorage`.
 
 Essa checklist ajuda a garantir que cada bloco foi concluído antes de avançar para o próximo.
+
+---
+
+## 8) Conectando ao seu front-end atual (explicação prática)
+
+Se você ficou com dúvida nessa parte, use este mini-plano de conexão em 6 etapas.
+
+### Etapa 1 — Subir o backend e liberar CORS
+No backend (`src/app.js`), garanta:
+
+```js
+app.use(cors({ origin: "http://127.0.0.1:5500" })); // ajuste para sua origem real
+app.use(express.json());
+```
+
+Isso permite que o navegador (frontend) chame a API em outra porta, por exemplo `localhost:3001`.
+Para estudo, `cors()` aberto funciona; para segurança, prefira definir `origin` explicitamente.
+
+---
+
+### Etapa 2 — Criar configuração de API no `script.js`
+No topo do seu `script.js`, adicione:
+
+```js
+const API_URL = "http://localhost:3001";
+```
+
+#### Para iniciantes
+- Essa constante evita repetir URL em todo lugar.
+- Se mudar a porta depois, você altera só 1 linha.
+
+---
+
+### Etapa 3 — Criar helper de requisição autenticada
+Ainda no `script.js`, adicione:
+
+```js
+async function apiFetch(path, options = {}) {
+  const token = localStorage.getItem("token");
+
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.error || "Erro na API");
+  }
+
+  return response.json();
+}
+```
+
+#### Para iniciantes
+- `path` é o “pedaço final” da rota (`/transactions`, por exemplo).
+- `Authorization` envia o token para rotas protegidas.
+- `throw new Error(...)` faz o erro aparecer no front para você tratar com `alert`/mensagem.
+
+---
+
+### Etapa 4 — Login real (para receber token)
+No fluxo de login/cadastro do front:
+
+```js
+async function login(email, password) {
+  const data = await apiFetch("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password }),
+  });
+
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("usuario", JSON.stringify(data.user));
+}
+```
+
+Sem token salvo, as rotas de transação vão responder `401`.
+
+> Observação de segurança: em produção, prefira cookie `HttpOnly` para tokens.
+> `localStorage` é aceitável para estudo, mas é mais exposto a XSS.
+
+---
+
+### Etapa 5 — Trocar carregamento inicial do `localStorage` para API
+Hoje você tem algo como `transacoes = ...localStorage...`.
+A migração fica assim:
+
+```js
+let transacoes = [];
+
+async function carregarTransacoesDaApi() {
+  const hoje = new Date();
+  const month = hoje.getMonth() + 1;
+  const year = hoje.getFullYear();
+
+  transacoes = await apiFetch(`/transactions?month=${month}&year=${year}`);
+  atualizarInterface(); // sua função que recalcula cards, lista e gráficos
+}
+```
+
+#### Para iniciantes
+- Primeiro faça só o **carregamento** via API.
+- Depois que funcionar, migre criar/editar/excluir.
+
+---
+
+### Etapa 6 — Trocar CRUD do front para endpoints da API
+Quando salvar nova transação no form:
+
+```js
+await apiFetch("/transactions", {
+  method: "POST",
+  body: JSON.stringify({
+    type: tipo,
+    description: descricao,
+    category: categoria,
+    amount: valor,
+    date: data,
+  }),
+});
+
+await carregarTransacoesDaApi();
+```
+
+Quando editar:
+
+```js
+await apiFetch(`/transactions/${id}`, {
+  method: "PUT",
+  body: JSON.stringify({ type, description, category, amount, date }),
+});
+await carregarTransacoesDaApi();
+```
+
+Quando excluir:
+
+```js
+await apiFetch(`/transactions/${id}`, { method: "DELETE" });
+await carregarTransacoesDaApi();
+```
+
+### Checagem rápida: seu repositório está usando ESM?
+No backend, confirme no `package.json`:
+
+```json
+{
+  "type": "module"
+}
+```
+
+Se esse campo não existir, o Node tende a tratar arquivos como CommonJS por padrão.
+
+---
+
+## 9) Erros comuns na conexão front + back (e como resolver)
+
+- **Erro 401 (não autorizado)**
+  - Causa: token não foi salvo ou expirou.
+  - Solução: refazer login e verificar `Authorization: Bearer <token>`.
+
+- **Erro CORS no navegador**
+  - Causa: backend sem `cors()`.
+  - Solução: confirmar `app.use(cors())` no `app.js`.
+
+- **Erro 404 em `/transactions`**
+  - Causa: rota diferente do backend.
+  - Solução: conferir prefixo correto (`/transactions`) e porta (`3001`).
+
+- **Front não atualiza após salvar**
+  - Causa: criou no backend, mas não recarregou lista local.
+  - Solução: chamar `await carregarTransacoesDaApi()` após POST/PUT/DELETE.
+
+---
+
+## 10) Ordem exata para você implementar hoje (sem se perder)
+
+1. Subir backend e testar `/health`.
+2. Fazer login e confirmar que o token ficou no `localStorage`.
+3. Implementar `apiFetch`.
+4. Migrar apenas a listagem (`GET /transactions`).
+5. Migrar criação (`POST /transactions`).
+6. Migrar edição e exclusão.
+7. Por último, remover dependência do `localStorage` para transações.
+
+Essa ordem reduz frustração e facilita debug passo a passo.
