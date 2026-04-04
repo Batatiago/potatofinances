@@ -623,16 +623,22 @@ localStorage.setItem("token", token);
 3. Criar helper de requisição:
 
 ```js
+const API_URL = "http://localhost:3001";
+
 async function apiFetch(path, options = {}) {
   const token = localStorage.getItem("token");
+  const headers = {
+    "Content-Type": "application/json",
+    ...(options.headers || {}),
+  };
 
-  const response = await fetch(`http://localhost:3001${path}`, {
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: token ? `Bearer ${token}` : "",
-      ...(options.headers || {}),
-    },
+    headers,
   });
 
   if (!response.ok) {
