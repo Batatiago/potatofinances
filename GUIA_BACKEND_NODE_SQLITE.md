@@ -402,6 +402,12 @@ export async function createTransaction(req, res) {
     return res.status(400).json({ error: "Campos obrigatórios ausentes." });
   }
 
+  const allowedTypes = ["receita", "despesa", "investimento"];
+  if (!allowedTypes.includes(type)) {
+    return res.status(400).json({
+      error: "Tipo inválido. Use: receita, despesa ou investimento.",
+    });
+  }
   if (Number(amount) < 0) {
     return res.status(400).json({ error: "Valor não pode ser negativo." });
   }
