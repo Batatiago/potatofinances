@@ -146,7 +146,7 @@ dataInput.value = formatarDataInput(hoje);
 // Atualiza texto do botão de tema conforme estado atual.
 function atualizarTextoBotaoTema() {
   const dark = document.body.classList.contains("dark-theme");
-  btnTema.textContent = dark ? "☀️ Modo claro" : "🌙 Modo noturno";
+  btnTema.textContent = dark ? "☀️" : "🌙";
 }
 
 // Aplica tema e salva preferência.
